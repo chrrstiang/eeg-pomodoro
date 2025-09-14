@@ -1,59 +1,17 @@
-from typing import Union
 import io
-import time
 import pandas as pd
 import base64
+import asyncio
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, WebSocket
+from fastapi import FastAPI, WebSocket
 
-from pydantic import BaseModel
-
-from eeg_extraction import process_eeg_segment, process_eeg_file
+from eeg_extraction import process_eeg_segment
 
 app = FastAPI()
-
-class Item(BaseModel):
-    name: str
-    price: float
-    is_offer: Union[bool, None] = None
-
 
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
-
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
-
-@app.put("/items/{item_id}")
-def update_item(item_id: int, item: Item):
-    return {"item_name": item.name, "item_id": item_id}
-
-@app.post("/process-eeg")
-async def process_eeg_file(file: UploadFile = File(...)):
-    # 1. Basic validation
-    if not file.filename.endswith('.csv'):
-        raise HTTPException(
-            status_code=400,
-            detail="File must be a CSV."
-        )
-
-    # 2. Process the file content
-    tbr_score = process_eeg_file(file.file)
-
-    # 3. Return a response
-    if tbr_score is not None:
-        return {
-            "message": "Processing successful",
-            "focus_score": round(tbr_score, 2)
-        }
-    else:
-        raise HTTPException(
-            status_code=500,
-            detail="Could not calculate a valid focus score."
-        )
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -68,24 +26,43 @@ async def websocket_endpoint(websocket: WebSocket):
 
         csv_file_stream = io.BytesIO(file_bytes)
 
-        # Read the file in chunks to simulate a real-time stream
-        CHUNK_SIZE = 500
-        # The stream needs to be reset to the beginning after reading bytes
+        # Read the entire file at once since we need to process it in 3-second windows
         csv_file_stream.seek(0)
-        chunks = pd.read_csv(csv_file_stream, chunksize=CHUNK_SIZE, header=None)
-
-        for i, chunk in enumerate(chunks):
-            eeg_segment = chunk[16].values
+        df = pd.read_csv(csv_file_stream, header=None)
+        
+        # Assuming 500Hz sampling rate (500 samples per second)
+        SAMPLES_PER_SECOND = 500
+        WINDOW_SIZE = 3 * SAMPLES_PER_SECOND  # 3 seconds of data
+        
+        total_seconds = len(df) // SAMPLES_PER_SECOND
+        
+        window_size = 3  # 3-second windows
+        for second in range(0, total_seconds - window_size + 1, window_size):
+            start_second = second + 1  # Make it 1-based for display
+            end_second = min(second + window_size, total_seconds)
+            start_idx = second * SAMPLES_PER_SECOND
+            end_idx = min((second + window_size) * SAMPLES_PER_SECOND, len(df))
+            
+            if start_idx >= len(df):
+                break
+                
+            # Get the 3-second window
+            window = df.iloc[start_idx:end_idx]
+            eeg_segment = window[16].values
+            
+            # Process the 3-second window
             focus_score = process_eeg_segment(eeg_segment)
-
-            print(f"Focus score, second {i + 1}: {focus_score:.2f}")
-
+            
+            print(f"Focus score for seconds {start_second}-{end_second}: {focus_score:.2f}")
+            
             await websocket.send_json({
-                "second": i + 1,
+                "start_second": start_second,
+                "end_second": end_second,
                 "focus_score": round(focus_score, 2) if focus_score is not None else None
             })
-
-            time.sleep(1)
+            
+            # Sleep for the duration of the window to simulate real-time processing
+            await asyncio.sleep(window_size)
 
     except Exception as e:
         await websocket.send_json({"error": str(e)})

@@ -5,9 +5,9 @@ import time
 import io
 
 # --- 1. Define Constants ---
-SAMPLING_RATE = 500  # Hz
+SAMPLING_RATE = 1500  # Hz
 ELECTRODE_INDEX = 16  # Fz electrode
-CHUNK_SIZE = SAMPLING_RATE  # 1-second window for the focus score
+CHUNK_SIZE = SAMPLING_RATE  # 3-second window for the focus score
 
 # --- 2. Define Frequency Bands ---
 theta_band = (4, 8)  # Hz

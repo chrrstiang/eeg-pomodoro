@@ -96,6 +96,10 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
           ws.send(base64Content);
           console.log("File sent. Waiting for scores...");
+          
+          // Navigate to focus screen immediately after successful file send
+          const { router } = await import("expo-router");
+          router.push("/focus");
         } catch (fileError) {
           console.error("Error reading file:", fileError);
           Alert.alert("Error", "Failed to read file");
@@ -107,14 +111,24 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          
+          // Handle error messages
+          if (data.error) {
+            console.error("Server error:", data.error);
+            Alert.alert("Error", data.error);
+            return;
+          }
 
-          // Update focus score and current second
+          // Update focus score and current second range
           if (typeof data.focus_score === "number") {
             setFocusScore(data.focus_score);
           }
 
-          if (typeof data.second === "number") {
-            setCurrentSecond(data.second);
+          // Handle the 3-second window
+          if (typeof data.start_second === "number" && typeof data.end_second === "number") {
+            // Update to the end of the window to show progress
+            setCurrentSecond(data.end_second);
+            console.log(`Processing seconds ${data.start_second} to ${data.end_second}:`, data.focus_score);
           }
 
           console.log("Received data:", data);
