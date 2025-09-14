@@ -1,8 +1,10 @@
 import { View, TouchableOpacity } from "react-native";
 import { Text } from "@/components/ui/text";
 import { useState, useEffect, useRef } from "react";
+import { useWebSocket } from "../contexts/WebSocketContext";
 
 export default function FocusPage() {
+  const { focusScore, status, currentSecond, disconnect } = useWebSocket();
   const [isRunning, setIsRunning] = useState(false);
   const [timeLeft, setTimeLeft] = useState(1500); // 25 minutes in seconds
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -66,7 +68,18 @@ export default function FocusPage() {
           </Text>
         </View>
 
-        {/* Placeholder for future EEG controls */}
+        {/* EEG Focus Score Display */}
+        <View className="w-full mb-8 p-6 bg-gray-50 rounded-xl">
+          <Text className="text-lg font-semibold text-center mb-2">Focus Score</Text>
+          <Text className="text-4xl font-bold text-center text-blue-600">
+            {focusScore !== null ? focusScore.toFixed(2) : '--'}
+          </Text>
+          <Text className="text-sm text-center text-gray-600 mt-1">
+            Current Second: {currentSecond}
+          </Text>
+        </View>
+
+        {/* Timer Controls */}
         <View className="w-full space-y-4 gap-8">
           <TouchableOpacity
             className="w-full bg-blue-500 py-4 px-6 rounded-xl shadow-md items-center"
@@ -84,11 +97,18 @@ export default function FocusPage() {
           >
             <Text className="text-white text-xl font-bold">Reset Timer</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            className="w-full bg-gray-500 py-4 px-6 rounded-xl shadow-md items-center"
+            onPress={disconnect}
+          >
+            <Text className="text-white text-xl font-bold">Disconnect EEG</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Status indicator */}
         <Text variant="muted" className="text-center px-6 leading-6 mt-6">
-          EEG device status: Not connected
+          EEG device status: {status === 'connected' ? 'Connected' : status === 'connecting' ? 'Connecting...' : status === 'error' ? 'Error' : 'Disconnected'}
         </Text>
       </View>
     </View>

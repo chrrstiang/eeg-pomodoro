@@ -1,4 +1,8 @@
 from typing import Union
+import io
+import time
+import pandas as pd
+import base64
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, WebSocket
 
@@ -57,8 +61,10 @@ async def websocket_endpoint(websocket: WebSocket):
     print("Websocket accepted")
 
     try:
-        file_bytes = await websocket.receive_bytes()
+        base64_string = await websocket.receive_text()
         print("File received. Starting to process...")
+
+        file_bytes = base64.b64decode(base64_string)
 
         csv_file_stream = io.BytesIO(file_bytes)
 
@@ -66,7 +72,7 @@ async def websocket_endpoint(websocket: WebSocket):
         CHUNK_SIZE = 500
         # The stream needs to be reset to the beginning after reading bytes
         csv_file_stream.seek(0)
-        chunks = pd.read_csv(io.StringIO(csv_file_stream.read().decode('utf-8')), chunksize=CHUNK_SIZE, header=None)
+        chunks = pd.read_csv(csv_file_stream, chunksize=CHUNK_SIZE, header=None)
 
         for i, chunk in enumerate(chunks):
             eeg_segment = chunk[16].values

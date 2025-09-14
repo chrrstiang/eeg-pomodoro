@@ -2,12 +2,14 @@ import { View, TouchableOpacity, Alert } from "react-native";
 import { router } from "expo-router";
 import { Text } from "@/components/ui/text";
 import * as DocumentPicker from "expo-document-picker";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useWebSocket } from "../contexts/WebSocketContext";
 
 export default function Index() {
+  const { connectAndSendFile, isUploading, currentSecond } = useWebSocket();
+  
   const [selectedFile, setSelectedFile] =
     useState<DocumentPicker.DocumentPickerResult | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
 
   const handleFilePicker = async () => {
     try {
@@ -26,6 +28,14 @@ export default function Index() {
     }
   };
 
+  // Navigate to focus page when first score is received
+  useEffect(() => {
+    if (currentSecond === 1) {
+      console.log("First score received. Navigating to display page.");
+      router.push("../focus");
+    }
+  }, [currentSecond]);
+
   const handleSubmit = async () => {
     if (
       !selectedFile ||
@@ -36,22 +46,11 @@ export default function Index() {
       return;
     }
 
-    setIsUploading(true);
-
     try {
-      // Simulate file processing
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      Alert.alert(
-        "Success",
-        `File "${selectedFile.assets[0].name}" uploaded successfully!`,
-        [{ text: "OK", onPress: () => router.push("/focus") }]
-      );
+      await connectAndSendFile(selectedFile.assets[0].uri);
     } catch (error) {
-      console.error("Error uploading file:", error);
-      Alert.alert("Error", "Failed to upload file");
-    } finally {
-      setIsUploading(false);
+      console.error("Error connecting or sending file:", error);
+      Alert.alert("Error", "Failed to connect or send file");
     }
   };
 
