@@ -1,10 +1,11 @@
 from typing import Union
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, WebSocket
 
 from pydantic import BaseModel
 
-from eeg_extraction import calculate_tbr
+from backend.eeg_extraction import process_eeg_segment
+from eeg_extraction import process_eeg_file
 
 app = FastAPI()
 
@@ -37,7 +38,7 @@ async def process_eeg_file(file: UploadFile = File(...)):
         )
 
     # 2. Process the file content
-    tbr_score = calculate_tbr(file.file)
+    tbr_score = process_eeg_file(file.file)
 
     # 3. Return a response
     if tbr_score is not None:
@@ -50,6 +51,42 @@ async def process_eeg_file(file: UploadFile = File(...)):
             status_code=500,
             detail="Could not calculate a valid focus score."
         )
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    print("Websocket accepted")
+
+    try:
+        file_bytes = await websocket.receive_bytes()
+        print("File received. Starting to process...")
+
+        csv_file_stream = io.BytesIO(file_bytes)
+
+        # Read the file in chunks to simulate a real-time stream
+        CHUNK_SIZE = 500
+        # The stream needs to be reset to the beginning after reading bytes
+        csv_file_stream.seek(0)
+        chunks = pd.read_csv(io.StringIO(csv_file_stream.read().decode('utf-8')), chunksize=CHUNK_SIZE, header=None)
+
+        for i, chunk in enumerate(chunks):
+            eeg_segment = chunk[16].values
+            focus_score = process_eeg_segment(eeg_segment)
+
+            print(f"Focus score, second {i + 1}: {focus_score:.2f}")
+
+            await websocket.send_json({
+                "second": i + 1,
+                "focus_score": round(focus_score, 2) if focus_score is not None else None
+            })
+
+            time.sleep(1)
+
+    except Exception as e:
+        await websocket.send_json({"error": str(e)})
+
+    await websocket.close()
+    print("WebSocket connection closed.")
 
 
 
