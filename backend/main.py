@@ -4,8 +4,7 @@ from fastapi import FastAPI, UploadFile, File, HTTPException, WebSocket
 
 from pydantic import BaseModel
 
-from backend.eeg_extraction import process_eeg_segment
-from eeg_extraction import process_eeg_file
+from eeg_extraction import process_eeg_segment, process_eeg_file
 
 app = FastAPI()
 
