@@ -37,7 +37,7 @@ def process_eeg_segment(eeg_segment):
     beta_power = np.sum(power_density[beta_indices])
 
     if beta_power > 0:
-        return theta_power / beta_power
+        return theta_power, beta_power, frequencies, power_density
     else:
         return None
 

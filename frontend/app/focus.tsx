@@ -1,11 +1,50 @@
-import { View, TouchableOpacity } from "react-native";
+import { View, TouchableOpacity, ScrollView } from "react-native";
 import { Text } from "@/components/ui/text";
 import { useState, useEffect, useRef } from "react";
 import { useWebSocket } from "../contexts/WebSocketContext";
 import { AnimatedRollingNumber } from "react-native-animated-rolling-numbers";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function FocusPage() {
-  const { focusScore, status, currentSecond, disconnect } = useWebSocket();
+  const [activeTab, setActiveTab] = useState("timer");
+
+  return (
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
+      <TabsList className="px-4 h-14 w-full">
+        <TabsTrigger
+          value="timer"
+          className={`flex-row w-1/2 items-center gap-2 px-6 py-3 rounded-lg ${activeTab === "timer" ? "bg-blue-100 dark:bg-blue-900" : "bg-transparent"}`}
+        >
+          <Ionicons name="timer-outline" size={20} color="white" />
+          <Text className="dark:text-white text-base font-medium">
+            Focus Timer
+          </Text>
+        </TabsTrigger>
+        <TabsTrigger
+          value="details"
+          className={`flex-row w-1/2 items-center gap-2 px-6 py-3 rounded-lg ${activeTab === "details" ? "bg-blue-100 dark:bg-blue-900" : "bg-transparent"}`}
+        >
+          <Ionicons name="stats-chart" size={20} color="white" />
+          <Text className="dark:text-white text-base font-medium">
+            Brainwaves
+          </Text>
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="timer" className="flex-1">
+        <TimeScreen />
+      </TabsContent>
+
+      <TabsContent value="details" className="flex-1">
+        <DetailScreen />
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+function TimeScreen() {
+  const { focusScore, status, currentSecond } = useWebSocket();
   const [isRunning, setIsRunning] = useState(true);
   const [timeLeft, setTimeLeft] = useState(1500); // 25 minutes in seconds
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -45,22 +84,22 @@ export default function FocusPage() {
   };
 
   return (
-    <View className="flex-1 justify-center items-center px-8 bg-background">
+    <View className="flex-1 justify-center items-center px-8 bg-background dark:bg-foreground">
       <View className="items-center w-full max-w-sm">
         {/* Title */}
         <Text
           variant="h1"
-          className="text-center mb-3 text-foreground font-extrabold tracking-tight"
+          className="dark:text-white text-center mb-3 font-extrabold tracking-tight"
         >
           Focus Session
         </Text>
 
         {/* Custom Countdown Timer */}
         <View className="items-center mb-12">
-          <Text className="text-6xl font-bold text-foreground mb-2">
+          <Text className="dark:text-white text-6xl font-bold mb-2">
             {formatTime(timeLeft)}
           </Text>
-          <Text className="text-lg text-muted-foreground">
+          <Text className=" dark:text-white text-lg text-muted-foreground">
             {timeLeft === 0
               ? "Time's up!"
               : isRunning
@@ -101,7 +140,7 @@ export default function FocusPage() {
             onPress={() => setIsRunning(!isRunning)}
             disabled={timeLeft === 0}
           >
-            <Text className="text-white text-xl font-bold">
+            <Text className="dark:text-white text-xl font-bold">
               {timeLeft === 0 ? "Finished" : isRunning ? "Pause" : "Start"}
             </Text>
           </TouchableOpacity>
@@ -110,7 +149,9 @@ export default function FocusPage() {
             className="w-full bg-red-500 py-4 px-6 rounded-xl shadow-md items-center"
             onPress={beginBreak}
           >
-            <Text className="text-white text-xl font-bold">Take a break</Text>
+            <Text className="dark:text-white text-xl font-bold">
+              Take a break
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -126,6 +167,99 @@ export default function FocusPage() {
                 : "Disconnected"}
         </Text>
       </View>
+    </View>
+  );
+}
+
+function DetailScreen() {
+  const { focusScore, thetaPower, betaPower } = useWebSocket();
+
+  // Card component for reusability
+  const StatCard = ({
+    title,
+    value,
+    description,
+    emoji,
+  }: {
+    title: string;
+    value: number;
+    description: string;
+    emoji: string;
+  }) => (
+    <View className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm mb-4">
+      <View className="flex-row justify-between items-center mb-2">
+        <Text className="text-gray-600 dark:text-gray-300 text-base">
+          {title}
+        </Text>
+        <Text className="text-2xl">{emoji}</Text>
+      </View>
+      <View className="items-start">
+        <AnimatedRollingNumber
+          value={value || 0}
+          toFixed={2}
+          numberStyle={{
+            fontSize: 32,
+            fontWeight: "bold",
+            color: "white",
+          }}
+          dotStyle={{
+            color: "white",
+            fontSize: 40,
+            paddingBottom: 10,
+          }}
+        />
+      </View>
+      <Text className="text-sm text-gray-500 dark:text-gray-400">
+        {description}
+      </Text>
+    </View>
+  );
+
+  return (
+    <View className="flex-1 bg-gray-50 dark:bg-gray-900 p-4">
+      <View className="mb-6">
+        <Text className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+          Brainwave Analysis
+        </Text>
+        <Text className="text-gray-500 dark:text-gray-400">
+          Real-time EEG metrics and focus monitoring
+        </Text>
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <StatCard
+          title="Focus Score"
+          value={focusScore !== null ? focusScore : 0}
+          description="The closer to 0, the better your focus"
+          emoji="🎯"
+        />
+
+        <StatCard
+          title="Theta Power"
+          value={thetaPower !== null ? thetaPower : 0}
+          description="Associated with deep focus and meditation (4-8 Hz)"
+          emoji="🌊"
+        />
+
+        <StatCard
+          title="Beta Power"
+          value={betaPower !== null ? betaPower : 0}
+          description="Associated with active thinking and focus (12-30 Hz)"
+          emoji="⚡"
+        />
+
+        <View className="mt-6 bg-white dark:bg-gray-800 rounded-xl p-6">
+          <Text className="text-gray-600 dark:text-gray-300 text-base mb-4">
+            Frequency Spectrum
+          </Text>
+          <View className="h-48 bg-gray-100 dark:bg-gray-700 rounded-lg items-center justify-center">
+            <Text className="text-gray-500 dark:text-gray-400">
+              Frequency spectrum visualization
+            </Text>
+            <Text className="text-gray-400 text-sm mt-2">Coming soon</Text>
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
 }

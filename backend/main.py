@@ -32,37 +32,44 @@ async def websocket_endpoint(websocket: WebSocket):
         
         # Assuming 500Hz sampling rate (500 samples per second)
         SAMPLES_PER_SECOND = 500
-        WINDOW_SIZE = 3 * SAMPLES_PER_SECOND  # 3 seconds of data
+        WINDOW_SIZE_SECONDS = 1
         
         total_seconds = len(df) // SAMPLES_PER_SECOND
         
-        window_size = 3  # 3-second windows
-        for second in range(0, total_seconds - window_size + 1, window_size):
+        for second in range(0, total_seconds - WINDOW_SIZE_SECONDS + 1, WINDOW_SIZE_SECONDS):
             start_second = second + 1  # Make it 1-based for display
-            end_second = min(second + window_size, total_seconds)
+            end_second = min(second + WINDOW_SIZE_SECONDS, total_seconds)
             start_idx = second * SAMPLES_PER_SECOND
-            end_idx = min((second + window_size) * SAMPLES_PER_SECOND, len(df))
+            end_idx = min((second + WINDOW_SIZE_SECONDS) * SAMPLES_PER_SECOND, len(df))
             
             if start_idx >= len(df):
                 break
                 
-            # Get the 3-second window
+            # Get the data from the window
             window = df.iloc[start_idx:end_idx]
             eeg_segment = window[16].values
             
-            # Process the 3-second window
-            focus_score = process_eeg_segment(eeg_segment)
+            # Process the window
+            theta_power, beta_power, frequencies, power_density = process_eeg_segment(eeg_segment)
+
+            focus_score = theta_power/beta_power
             
-            print(f"Focus score for seconds {start_second}-{end_second}: {focus_score:.2f}")
+            print(f"Focus score for seconds {start_second}-{end_second}: {theta_power}/{beta_power} = {focus_score:.2f}")
             
             await websocket.send_json({
                 "start_second": start_second,
                 "end_second": end_second,
-                "focus_score": round(focus_score, 2) if focus_score is not None else None
+                "focus_score": round(focus_score, 2) if focus_score is not None else None,
+                "theta_power": round(theta_power, 2) if theta_power is not None else None,
+                "beta_power": round(beta_power, 2) if beta_power is not None else None,
+                "spectrum": {
+                    "frequencies": frequencies.tolist(),
+                    "power_density": power_density.tolist()
+                }
             })
             
             # Sleep for the duration of the window to simulate real-time processing
-            await asyncio.sleep(window_size)
+            await asyncio.sleep(WINDOW_SIZE_SECONDS)
 
     except Exception as e:
         await websocket.send_json({"error": str(e)})

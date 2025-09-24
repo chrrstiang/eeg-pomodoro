@@ -15,21 +15,33 @@ export type WebSocketStatus =
   | "connected"
   | "error";
 
+// Interface for spectrum data
+interface SpectrumData {
+  frequencies: number[];
+  power_density: number[];
+}
+
 // WebSocket context interface
 interface WebSocketContextType {
   // State
   wsUrl: string;
   focusScore: number | null;
+  thetaPower: number | null;
+  betaPower: number | null;
   status: WebSocketStatus;
   currentSecond: number;
   isUploading: boolean;
+  spectrumData: SpectrumData | null;
 
   // State setters
   setWsUrl: (url: string) => void;
   setFocusScore: (score: number | null) => void;
+  setThetaPower: (power: number | null) => void;
+  setBetaPower: (power: number | null) => void;
   setStatus: (status: WebSocketStatus) => void;
   setCurrentSecond: (second: number) => void;
   setIsUploading: (uploading: boolean) => void;
+  setSpectrumData: (data: SpectrumData | null) => void;
 
   // WebSocket methods
   connectAndSendFile: (fileUri: string) => Promise<void>;
@@ -58,9 +70,12 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   // State
   const [wsUrl, setWsUrl] = useState<string>(defaultUrl);
   const [focusScore, setFocusScore] = useState<number | null>(null);
+  const [thetaPower, setThetaPower] = useState<number | null>(null);
+  const [betaPower, setBetaPower] = useState<number | null>(null);
   const [status, setStatus] = useState<WebSocketStatus>("disconnected");
   const [currentSecond, setCurrentSecond] = useState<number>(0);
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [spectrumData, setSpectrumData] = useState<SpectrumData | null>(null);
 
   // WebSocket ref
   const wsRef = useRef<WebSocket | null>(null);
@@ -122,8 +137,25 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
           if (typeof data.focus_score === "number") {
             setFocusScore(data.focus_score);
           }
+          if (typeof data.theta_power === "number") {
+            setThetaPower(data.theta_power);
+          }
+          if (typeof data.beta_power === "number") {
+            setBetaPower(data.beta_power);
+          }
+          // Update spectrum data if available
+          if (
+            data.spectrum &&
+            data.spectrum.frequencies &&
+            data.spectrum.power_density
+          ) {
+            setSpectrumData({
+              frequencies: data.spectrum.frequencies,
+              power_density: data.spectrum.power_density,
+            });
+          }
 
-          // Handle the 3-second window
+          // Handle the time window
           if (
             typeof data.start_second === "number" &&
             typeof data.end_second === "number"
@@ -134,9 +166,15 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
               `Processing seconds ${data.start_second} to ${data.end_second}:`,
               data.focus_score
             );
-          }
 
-          console.log("Received data:", data);
+            // Log spectrum data if available
+            if (data.spectrum) {
+              console.log("Spectrum data received:", {
+                frequencies: data.spectrum.frequencies?.length || 0,
+                power_density: data.spectrum.power_density?.length || 0,
+              });
+            }
+          }
         } catch (parseError) {
           console.error("Error parsing WebSocket message:", parseError);
         }
@@ -172,6 +210,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     setIsUploading(false);
     setFocusScore(null);
     setCurrentSecond(0);
+    setSpectrumData(null);
   };
 
   // Context value
@@ -179,16 +218,22 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     // State
     wsUrl,
     focusScore,
+    thetaPower,
+    betaPower,
     status,
     currentSecond,
     isUploading,
+    spectrumData,
 
     // State setters
     setWsUrl,
     setFocusScore,
+    setThetaPower,
+    setBetaPower,
     setStatus,
     setCurrentSecond,
     setIsUploading,
+    setSpectrumData,
 
     // Methods
     connectAndSendFile,
