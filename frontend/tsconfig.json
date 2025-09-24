@@ -1,37 +1,37 @@
 {
+  "extends": "@tsconfig/react-native/tsconfig.json",
   "compilerOptions": {
-    "allowJs": true,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "isolatedModules": true,
-    "jsx": "react-native",
-    "lib": [
-      "es2017"
-    ],
-    "moduleResolution": "bundler",
-    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "~/*": ["./*"]
+    },
     "strict": true,
-    "target": "esnext",
+    "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "paths": {
-      "@/*": [
-        "./*"
-      ],
-      "~/": [
-        "./*"
-      ]
-    }
+    "jsx": "react-native",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "types": ["@types/react", "@types/react-native"]
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx",
+    "./**/*.ts",
+    "./**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
-    "nativewind-env.d.ts"
+    "nativewind-env.d.ts",
+    "app/**/*.tsx",
+    "app/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
-  ],
-  "extends": "expo/tsconfig.base.json"
+    "node_modules",
+    "**/__tests__/*",
+    "**/__mocks__/*"
+  ]
 }
