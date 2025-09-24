@@ -5,7 +5,6 @@ import React, {
   useRef,
   ReactNode,
 } from "react";
-import * as FileSystem from "expo-file-system";
 import { File } from "expo-file-system";
 import { Alert } from "react-native";
 
@@ -54,7 +53,7 @@ interface WebSocketProviderProps {
 // WebSocket Provider component
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   children,
-  defaultUrl = "ws://10.110.102.189:8000/ws",
+  defaultUrl = "ws://10.110.12.41:8000/ws",
 }) => {
   // State
   const [wsUrl, setWsUrl] = useState<string>(defaultUrl);
@@ -96,7 +95,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
           ws.send(base64Content);
           console.log("File sent. Waiting for scores...");
-          
+
           // Navigate to focus screen immediately after successful file send
           const { router } = await import("expo-router");
           router.push("/focus");
@@ -111,7 +110,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          
+
           // Handle error messages
           if (data.error) {
             console.error("Server error:", data.error);
@@ -125,10 +124,16 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
           }
 
           // Handle the 3-second window
-          if (typeof data.start_second === "number" && typeof data.end_second === "number") {
+          if (
+            typeof data.start_second === "number" &&
+            typeof data.end_second === "number"
+          ) {
             // Update to the end of the window to show progress
             setCurrentSecond(data.end_second);
-            console.log(`Processing seconds ${data.start_second} to ${data.end_second}:`, data.focus_score);
+            console.log(
+              `Processing seconds ${data.start_second} to ${data.end_second}:`,
+              data.focus_score
+            );
           }
 
           console.log("Received data:", data);
