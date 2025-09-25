@@ -88,10 +88,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
     setIsUploading(true);
     setStatus("connecting");
-    Alert.alert("Connecting", "Establishing WebSocket connection...", [
-      { text: "OK" },
-    ]);
-
     try {
       // Create new WebSocket connection
       const ws = new WebSocket(wsUrl);
@@ -100,7 +96,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       ws.onopen = async () => {
         console.log("WebSocket connection opened. Sending file...");
         setStatus("connected");
-        Alert.alert("Connected", "Sending file to backend...");
 
         try {
           const file = new File(fileUri);
@@ -110,10 +105,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
           ws.send(base64Content);
           console.log("File sent. Waiting for scores...");
-
-          // Navigate to focus screen immediately after successful file send
-          const { router } = await import("expo-router");
-          router.push("/focus");
         } catch (fileError) {
           console.error("Error reading file:", fileError);
           Alert.alert("Error", "Failed to read file");
