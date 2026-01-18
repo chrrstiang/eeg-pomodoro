@@ -7,7 +7,7 @@ import {
 } from "react-native";
 import { GradientBackground } from "@/components/ui/GradientBackground";
 import { Text } from "@/components/ui/text";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { useWebSocket } from "../contexts/WebSocketContext";
 import { AnimatedRollingNumber } from "react-native-animated-rolling-numbers";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -211,47 +211,6 @@ function TimeScreen() {
 function DetailScreen() {
   const { focusScore, thetaPower, betaPower, spectrumData } = useWebSocket();
 
-  // Card component for reusability
-  const StatCard = ({
-    title,
-    value,
-    description,
-    emoji,
-  }: {
-    title: string;
-    value: number;
-    description: string;
-    emoji: string;
-  }) => (
-    <View className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm mb-4">
-      <View className="flex-row justify-between items-center mb-2">
-        <Text className="text-gray-600 dark:text-gray-300 text-base">
-          {title}
-        </Text>
-        <Text className="text-2xl">{emoji}</Text>
-      </View>
-      <View className="items-start">
-        <AnimatedRollingNumber
-          value={value || 0}
-          toFixed={2}
-          numberStyle={{
-            fontSize: 32,
-            fontWeight: "bold",
-            color: useColorScheme() === "dark" ? "white" : "black",
-          }}
-          dotStyle={{
-            color: useColorScheme() === "dark" ? "white" : "black",
-            fontSize: 40,
-            paddingBottom: 10,
-          }}
-        />
-      </View>
-      <Text className="text-sm text-gray-500 dark:text-gray-400">
-        {description}
-      </Text>
-    </View>
-  );
-
   return (
     <GradientBackground>
       <View className="flex-1 p-4">
@@ -303,3 +262,47 @@ function DetailScreen() {
     </GradientBackground>
   );
 }
+
+const StatCard = memo(
+  ({
+    title,
+    value,
+    description,
+    emoji,
+  }: {
+    title: string;
+    value: number;
+    description: string;
+    emoji: string;
+  }) => (
+    <View className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm mb-4">
+      <View className="flex-row justify-between items-center mb-2">
+        <Text className="text-gray-600 dark:text-gray-300 text-base">
+          {title}
+        </Text>
+        <Text className="text-2xl">{emoji}</Text>
+      </View>
+      <View className="items-start">
+        <AnimatedRollingNumber
+          value={value || 0}
+          toFixed={2}
+          numberStyle={{
+            fontSize: 32,
+            fontWeight: "bold",
+            color: useColorScheme() === "dark" ? "white" : "black",
+          }}
+          dotStyle={{
+            color: useColorScheme() === "dark" ? "white" : "black",
+            fontSize: 40,
+            paddingBottom: 10,
+          }}
+        />
+      </View>
+      <Text className="text-sm text-gray-500 dark:text-gray-400">
+        {description}
+      </Text>
+    </View>
+  ),
+);
+
+StatCard.displayName = "StatCard";
