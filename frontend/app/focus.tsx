@@ -8,7 +8,7 @@ import {
 import { GradientBackground } from "@/components/ui/GradientBackground";
 import { Text } from "@/components/ui/text";
 import { useState, useEffect, useRef, memo } from "react";
-import { useWebSocket } from "../contexts/WebSocketContext";
+import { SpectrumData, useWebSocket } from "../contexts/WebSocketContext";
 import { AnimatedRollingNumber } from "react-native-animated-rolling-numbers";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,6 +17,39 @@ import { SpectrumPlot } from "@/components/ui/SpectrumPlot";
 
 export default function FocusPage() {
   const [activeTab, setActiveTab] = useState("timer");
+  const {
+    focusScore,
+    status,
+    currentSecond,
+    thetaPower,
+    betaPower,
+    spectrumData,
+  } = useWebSocket();
+
+  const [isRunning, setIsRunning] = useState(true);
+  const [timeLeft, setTimeLeft] = useState(1500); // 25 minutes in seconds
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (isRunning && timeLeft > 0) {
+      intervalRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            setIsRunning(false);
+            console.log("Break time!");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    }
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [isRunning, timeLeft]);
 
   return (
     <SafeAreaView
@@ -69,44 +102,47 @@ export default function FocusPage() {
         </TabsList>
 
         <TabsContent value="timer" className="flex-1">
-          <TimeScreen />
+          <TimeScreen
+            focusScore={focusScore}
+            status={status}
+            currentSecond={currentSecond}
+            isRunning={isRunning}
+            timeLeft={timeLeft}
+            setIsRunning={setIsRunning}
+            setTimeLeft={setTimeLeft}
+          />
         </TabsContent>
 
         <TabsContent value="details" className="flex-1">
-          <DetailScreen />
+          <DetailScreen
+            focusScore={focusScore}
+            thetaPower={thetaPower}
+            betaPower={betaPower}
+            spectrumData={spectrumData}
+          />
         </TabsContent>
       </Tabs>
     </SafeAreaView>
   );
 }
 
-function TimeScreen() {
-  const { focusScore, status, currentSecond } = useWebSocket();
-  const [isRunning, setIsRunning] = useState(true);
-  const [timeLeft, setTimeLeft] = useState(1500); // 25 minutes in seconds
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    if (isRunning && timeLeft > 0) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            setIsRunning(false);
-            console.log("Break time!");
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    }
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [isRunning, timeLeft]);
-
+function TimeScreen({
+  focusScore,
+  status,
+  currentSecond,
+  isRunning,
+  timeLeft,
+  setIsRunning,
+  setTimeLeft,
+}: {
+  focusScore: number | null;
+  status: string;
+  currentSecond: number;
+  isRunning: boolean;
+  timeLeft: number;
+  setIsRunning: (running: boolean) => void;
+  setTimeLeft: (time: number) => void;
+}) {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -208,9 +244,17 @@ function TimeScreen() {
   );
 }
 
-function DetailScreen() {
-  const { focusScore, thetaPower, betaPower, spectrumData } = useWebSocket();
-
+function DetailScreen({
+  focusScore,
+  thetaPower,
+  betaPower,
+  spectrumData,
+}: {
+  focusScore: number | null;
+  thetaPower: number | null;
+  betaPower: number | null;
+  spectrumData: SpectrumData | null;
+}) {
   return (
     <GradientBackground>
       <View className="flex-1 p-4">
