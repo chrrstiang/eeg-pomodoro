@@ -16,7 +16,7 @@ export type WebSocketStatus =
   | "error";
 
 // Interface for spectrum data
-interface SpectrumData {
+export interface SpectrumData {
   frequencies: number[];
   power_density: number[];
 }
