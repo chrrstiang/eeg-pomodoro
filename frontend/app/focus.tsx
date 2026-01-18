@@ -289,16 +289,15 @@ function DetailScreen({
             emoji="⚡"
           />
 
-          <View className="mt-6 bg-white dark:bg-gray-800 rounded-xl p-6">
+          <View className="mt-6 mb-10 bg-white dark:bg-gray-800 rounded-xl p-6">
             <Text className="text-gray-600 dark:text-gray-300 text-base mb-4">
               Frequency Spectrum
             </Text>
-            <View className="h-48 bg-gray-100 dark:bg-gray-700 rounded-lg items-center justify-center">
+            <View className="h-48 bg-gray-100 dark:bg-gray-700 rounded-lg mb-10 items-center justify-center">
               <SpectrumPlot
                 frequencies={spectrumData?.frequencies || []}
                 powerDensity={spectrumData?.power_density || []}
               />
-              <Text className="text-gray-400 text-sm mt-2">Coming soon</Text>
             </View>
           </View>
         </ScrollView>
