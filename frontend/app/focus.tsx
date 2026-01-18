@@ -13,6 +13,7 @@ import { AnimatedRollingNumber } from "react-native-animated-rolling-numbers";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { SpectrumPlot } from "@/components/ui/SpectrumPlot";
 
 export default function FocusPage() {
   const [activeTab, setActiveTab] = useState("timer");
@@ -208,7 +209,7 @@ function TimeScreen() {
 }
 
 function DetailScreen() {
-  const { focusScore, thetaPower, betaPower } = useWebSocket();
+  const { focusScore, thetaPower, betaPower, spectrumData } = useWebSocket();
 
   // Card component for reusability
   const StatCard = ({
@@ -290,9 +291,10 @@ function DetailScreen() {
               Frequency Spectrum
             </Text>
             <View className="h-48 bg-gray-100 dark:bg-gray-700 rounded-lg items-center justify-center">
-              <Text className="text-gray-500 dark:text-gray-400">
-                Frequency spectrum visualization
-              </Text>
+              <SpectrumPlot
+                frequencies={spectrumData?.frequencies || []}
+                powerDensity={spectrumData?.power_density || []}
+              />
               <Text className="text-gray-400 text-sm mt-2">Coming soon</Text>
             </View>
           </View>

@@ -1,6 +1,12 @@
-import { View, StyleSheet, ViewStyle, ColorValue } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useColorScheme } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ViewStyle,
+  ColorValue,
+  useColorScheme,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import React from "react";
 
 type GradientBackgroundProps = {
   children: React.ReactNode;
@@ -9,14 +15,17 @@ type GradientBackgroundProps = {
 
 type ColorTuple = readonly [ColorValue, ColorValue, ColorValue];
 
-export function GradientBackground({ children, style }: GradientBackgroundProps) {
+export function GradientBackground({
+  children,
+  style,
+}: GradientBackgroundProps) {
   const colorScheme = useColorScheme();
-  
+
   // Define gradient colors as readonly tuples
-  const lightColors: ColorTuple = ['#f8fafc', '#e2e8f0', '#cbd5e1'];
-  const darkColors: ColorTuple = ['#1e293b', '#0f172a', '#020617'];
-  
-  const colors = colorScheme === 'dark' ? darkColors : lightColors;
+  const lightColors: ColorTuple = ["#f8fafc", "#e2e8f0", "#cbd5e1"];
+  const darkColors: ColorTuple = ["#1e293b", "#0f172a", "#020617"];
+
+  const colors = colorScheme === "dark" ? darkColors : lightColors;
 
   return (
     <View style={[styles.container, style]}>
@@ -26,9 +35,7 @@ export function GradientBackground({ children, style }: GradientBackgroundProps)
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
       />
-      <View style={styles.content}>
-        {children}
-      </View>
+      <View style={styles.content}>{children}</View>
     </View>
   );
 }
@@ -38,7 +45,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   gradient: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     top: 0,

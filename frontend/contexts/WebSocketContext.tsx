@@ -53,7 +53,7 @@ interface WebSocketContextType {
 
 // Create context
 const WebSocketContext = createContext<WebSocketContextType | undefined>(
-  undefined
+  undefined,
 );
 
 // Provider props
@@ -65,7 +65,7 @@ interface WebSocketProviderProps {
 // WebSocket Provider component
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   children,
-  defaultUrl = "ws://10.110.12.41:8000/ws",
+  defaultUrl = "ws://10.110.33.72:8000/ws",
 }) => {
   // State
   const [wsUrl, setWsUrl] = useState<string>(defaultUrl);
@@ -155,7 +155,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             setCurrentSecond(data.end_second);
             console.log(
               `Processing seconds ${data.start_second} to ${data.end_second}:`,
-              data.focus_score
+              data.focus_score,
             );
 
             // Log spectrum data if available
